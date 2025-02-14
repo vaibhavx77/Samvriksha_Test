@@ -38,7 +38,10 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB Connected"))
+mongoose.connect(process.env.MONGO_URI , {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
 const SECRET_KEY = process.env.JWT_SECRET;
@@ -402,6 +405,7 @@ app.post("/api/orders", authenticate, async (req, res) => {
       totalAmount,
       status: "pending",
       contactDetails: {
+        name: userDetails.firstName + " " + userDetails.lastName,
         contactNo: userDetails.contactNo,
         address: userDetails.address,
         pincode: userDetails.pincode,
@@ -514,6 +518,31 @@ app.post("/api/orders/verify-payment", authenticate, async (req, res) => {
     }
   } catch (error) {
     console.error("Error verifying payment:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/orders/cancel", authenticate, async (req, res) => {
+  const { razorpay_order_id } = req.body;
+
+  try {
+    const order = await OrderModel.findOne({ paymentId: razorpay_order_id });
+
+    if (!order) {
+      return res.status(400).json({ message: "Order not found" });
+    }
+
+    if (order.paymentStatus === "pending") {
+      order.paymentStatus = "failed";
+      order.status = "cancelled";
+      await order.save();
+      console.log(`Order ${order._id} cancelled successfully`);
+      return res.status(200).json({ message: "Order cancelled due to payment failure", order });
+    }
+
+    res.status(400).json({ message: "Order already processed" });
+  } catch (error) {
+    console.error("Error cancelling order:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
