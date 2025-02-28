@@ -19,7 +19,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "https://samvriksha.netlify.app",
+  origin: ["https://samvriksha.netlify.app", "http://localhost:5173"],
   methods: "GET,POST,PUT,DELETE",
   credentials: true
 }));
