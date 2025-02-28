@@ -116,7 +116,10 @@ app.post("/api/register", async (req, res) => {
       from: '"Samvriksha" <samvriksha@gmail.com>',
       to: normalizedEmail,
       subject: "Email Verification",
-      html: `<p>Click the link to verify your email: <a href="${verifyLink}">${verifyLink}</a></p>`,
+      html: `<p>Click the button below to verify your email:</p>
+              <a href="${verifyLink}" style="display: inline-block; background-color: #28a745; color: white; font-size: 16px; padding: 10px 20px; text-decoration: none; border-radius: 5px; text-align: center; transition: background-color 0.3s ease;">
+                Verify Email
+              </a>`,
     });
 
     res.json({ message: "Registration successful. Check your email for verification (Valid only for 24 hours)." });
