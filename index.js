@@ -238,13 +238,51 @@ app.put("/change-password", authenticate, async (req, res) => {
 
 
 // Add to cart
+// app.post("/cart/add", authenticate, async (req, res) => {
+//   try {
+//     const { productId, quantity, selectedColor } = req.body;  // Include selectedColor
+//     const userId = req.user._id; // Extracted from authenticated user
+
+//     // Ensure quantity is a valid number
+//     const validQuantity = isNaN(quantity) || quantity <= 0 ? 1 : quantity;
+
+//     const product = await Product.findById(productId);
+//     if (!product) return res.status(404).json({ message: "Product not found" });
+
+//     let cart = await Cart.findOne({ userId });
+
+//     if (!cart) {
+//       cart = new Cart({
+//         userId,
+//         items: [{ productId, quantity: validQuantity, price: product.price, selectedColor: selectedColor || "" }],
+//       });
+//     } else {
+//       const itemIndex = cart.items.findIndex(
+//         (item) => item.productId.toString() === productId && item.selectedColor === selectedColor
+//       );
+//       if (itemIndex > -1) {
+//         cart.items[itemIndex].quantity += validQuantity;
+//       } else {
+//         cart.items.push({
+//           productId,
+//           quantity: validQuantity,
+//           price: product.price,
+//           selectedColor: selectedColor || "",
+//         });
+//       }
+//     }
+
+//     await cart.save();
+//     res.status(200).json({ message: "Product added to cart", cart });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// });
+// Add to cart
 app.post("/cart/add", authenticate, async (req, res) => {
   try {
-    const { productId, quantity, selectedColor } = req.body;  // Include selectedColor
-    const userId = req.user._id; // Extracted from authenticated user
-
-    // Ensure quantity is a valid number
-    const validQuantity = isNaN(quantity) || quantity <= 0 ? 1 : quantity;
+    const { productId, variant, size, design, color, additionalOptions, quantity, price } = req.body;
+    const userId = req.user._id;
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -254,20 +292,40 @@ app.post("/cart/add", authenticate, async (req, res) => {
     if (!cart) {
       cart = new Cart({
         userId,
-        items: [{ productId, quantity: validQuantity, price: product.price, selectedColor: selectedColor || "" }],
+        items: [
+          {
+            productId,
+            variant,
+            size,
+            design,
+            color,
+            additionalOptions,
+            quantity,
+            price,
+          },
+        ],
       });
     } else {
       const itemIndex = cart.items.findIndex(
-        (item) => item.productId.toString() === productId && item.selectedColor === selectedColor
+        (item) =>
+          item.productId.toString() === productId &&
+          item.variant === variant &&
+          item.size === size &&
+          item.design === design &&
+          item.color === color
       );
       if (itemIndex > -1) {
-        cart.items[itemIndex].quantity += validQuantity;
+        cart.items[itemIndex].quantity += quantity;
       } else {
         cart.items.push({
           productId,
-          quantity: validQuantity,
-          price: product.price,
-          selectedColor: selectedColor || "",
+          variant,
+          size,
+          design: design || "",
+          color : color || "",
+          additionalOptions: additionalOptions || [],
+          quantity,
+          price,
         });
       }
     }
@@ -280,18 +338,51 @@ app.post("/cart/add", authenticate, async (req, res) => {
 });
 
 
+// Update quantity
+// app.put("/cart/update", authenticate, async (req, res) => {
+//   try {
+//     const { productId, quantity, selectedColor } = req.body;
+//     const userId = req.user._id;
+
+//     let cart = await Cart.findOne({ userId });
+//     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+//     const itemIndex = cart.items.findIndex(
+//       (item) => item.productId.toString() === productId && item.selectedColor === selectedColor
+//     );
+//     if (itemIndex > -1) {
+//       if (quantity > 0) {
+//         cart.items[itemIndex].quantity = quantity;
+//       } else {
+//         cart.items.splice(itemIndex, 1); // Remove item if quantity is 0
+//       }
+//     } else {
+//       return res.status(404).json({ message: "Product not found in cart" });
+//     }
+
+//     await cart.save();
+//     res.status(200).json({ message: "Cart updated", cart });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// });
 
 // Update quantity
 app.put("/cart/update", authenticate, async (req, res) => {
   try {
-    const { productId, quantity, selectedColor } = req.body;
+    const { productId, variant, size, design, color, quantity } = req.body;
     const userId = req.user._id;
 
     let cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId && item.selectedColor === selectedColor
+      (item) =>
+        item.productId.toString() === productId &&
+        item.variant === variant &&
+        item.size === size &&
+        item.design === design &&
+        item.color === color
     );
     if (itemIndex > -1) {
       if (quantity > 0) {
@@ -313,16 +404,42 @@ app.put("/cart/update", authenticate, async (req, res) => {
 
 
 // Remove product from cart
+// app.delete("/cart/remove", authenticate, async (req, res) => {
+//   try {
+//     const { productId, selectedColor } = req.body;
+//     const userId = req.user._id;
+
+//     let cart = await Cart.findOne({ userId });
+//     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+//     cart.items = cart.items.filter(
+//       (item) => item.productId.toString() !== productId || item.selectedColor !== selectedColor
+//     );
+//     await cart.save();
+
+//     res.status(200).json({ message: "Product removed from cart", cart });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// });
+
+
+// Remove product from cart
 app.delete("/cart/remove", authenticate, async (req, res) => {
   try {
-    const { productId, selectedColor } = req.body;
+    const { productId, variant, size, design, color } = req.body;
     const userId = req.user._id;
 
     let cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId || item.selectedColor !== selectedColor
+      (item) =>
+        item.productId.toString() !== productId ||
+        item.variant !== variant ||
+        item.size !== size ||
+        item.design !== design ||
+        item.color !== color
     );
     await cart.save();
 
@@ -331,6 +448,8 @@ app.delete("/cart/remove", authenticate, async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 });
+
+
 
 
 // Get user cart
@@ -346,6 +465,33 @@ app.get("/cart", authenticate, async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 });
+
+// Get user cart
+// app.get("/cart", authenticate, async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+//     const cart = await Cart.findOne({ userId }).populate({
+//       path: "items.productId",
+//       model: "Products", // Ensure this matches your Product model name
+//     });
+
+//     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+//     // Format the cart items to include all necessary details
+//     const formattedCart = {
+//       ...cart.toObject(), // Convert Mongoose document to plain object
+//       items: cart.items.map((item) => ({
+//         ...item,
+//         product: item.productId, // Rename productId to product for frontend consistency
+//         productId: undefined, // Remove the redundant productId field
+//       })),
+//     };
+
+//     res.status(200).json(formattedCart);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// });
 
 
 
@@ -376,6 +522,65 @@ app.post("/products", async (req, res) => {
 });
 
 // Create an order & generate Razorpay order ID
+// app.post("/api/orders", authenticate, async (req, res) => {
+//   try {
+//     const userDetails = await User.findById(req.user.id);
+//     if (!userDetails) {
+//       return res.status(400).json({ message: "User not found" });
+//     }
+
+//     // Fetch cart items for the user
+//     const cart = await Cart.findOne({ userId: req.user.id }).populate("items.productId");
+
+//     if (!cart || cart.items.length === 0) {
+//       return res.status(400).json({ message: "Cart is empty" });
+//     }
+
+//     // Map products from the cart
+//     const products = cart.items.map((item) => ({
+//       product: item.productId._id,
+//       quantity: item.quantity,
+//       selectedColor: item.selectedColor,
+//     }));
+
+//     const totalAmount = cart.totalAmount;
+
+//     // Create Razorpay order
+//     const razorpayOrder = await razorpay.orders.create({
+//       amount: totalAmount * 100, // Convert to paise
+//       currency: "INR",
+//       receipt: `order_${Date.now()}`,
+//     });
+
+//     // Save order in DB with pending payment
+//     const newOrder = new OrderModel({
+//       user: userDetails._id,
+//       products,
+//       totalAmount,
+//       status: "pending",
+//       contactDetails: {
+//         name: userDetails.firstName + " " + userDetails.lastName,
+//         contactNo: userDetails.contactNo,
+//         address: userDetails.address,
+//         pincode: userDetails.pincode,
+//       },
+//       paymentId: razorpayOrder.id, // Store Razorpay order ID
+//       paymentStatus: "pending",
+//     });
+
+//     await newOrder.save();
+
+//     // Clear the cart after order creation
+//     await Cart.deleteOne({ userId: req.user.id });
+
+//     res.status(201).json({ order: newOrder, razorpayOrder });
+//   } catch (error) {
+//     console.error("Error creating order:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
 app.post("/api/orders", authenticate, async (req, res) => {
   try {
     const userDetails = await User.findById(req.user.id);
@@ -390,11 +595,17 @@ app.post("/api/orders", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    // Map products from the cart
+    // Map products from the cart with new structure
     const products = cart.items.map((item) => ({
       product: item.productId._id,
+      productName: item.productId.name, // Include product name
       quantity: item.quantity,
-      selectedColor: item.selectedColor,
+      variant: item.variant,
+      size: item.size,
+      design: item.design,
+      color: item.color,
+      additionalOptions: item.additionalOptions,
+      price: item.price, // Include the total price for the item
     }));
 
     const totalAmount = cart.totalAmount;
@@ -435,6 +646,9 @@ app.post("/api/orders", authenticate, async (req, res) => {
 });
 
 
+
+
+//this to be used for shiprocket logic
 // app.post("/api/orders", authenticate, async (req, res) => {
 //   try {
 //     const { shippingAmount } = req.body;
